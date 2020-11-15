@@ -1,10 +1,15 @@
 import socket
+import os
+from os import path
 
+def appendLinesToFile(lines):
+    with open("data.csv", 'a') as file:
+        file.write(str.join('\n', lines) + "\n")
 
 def server_program():
     # get the hostname
     host = "localhost"
-    port = 50000  # initiate port no above 1024
+    port = 49000  # initiate port no above 1024
 
     print("Starting Robocode Server...", host, port)
 
@@ -12,25 +17,40 @@ def server_program():
     # look closely. The bind() function takes tuple as argument
     server_socket.bind((host, port))  # bind host address and port together
 
-    # configure how many client the server can listen simultaneously
+    # configure how many clients the server can listen simultaneously
     server_socket.listen(5)
 
-    # print("Connection from: " + str(address))
+    # prepare lines to write
+    lines = list()
+
+    # add csv header
+    if not path.exists("data.csv"):
+        lines.append("ourX,ourY,ourHeading,ourRadarHeading,distanceToTarget,ourVelocity,enemyX,enemyY,enemyHeading,enemyVelocity")
+
+    i = 0
     while True:
-        conn, address = server_socket.accept()  # accept new connection
+        i += 1
+
+        # accept new connection
+        conn, address = server_socket.accept()
         # receive data stream. it won't accept data packet greater than 1024 bytes
-        data = conn.recv(1024).decode()
+        data = conn.recv(1024)
         if not data:
-            # if data is not received break
-            break
+            # if data is not received - continue
+            continue
+        
+        # decode data and exclude first two characters (some random bytes)
+        decodedData = data.decode("utf-8", errors="replace")[2:]
 
-        stringToClient = "FUCK YOU DAVE!!!!"
+        # add to lines
+        lines.append(decodedData)
 
-        print("Received data from robocode: " + str(data), "\nSending to client:", stringToClient)
-
-        conn.send(stringToClient.encode("UTF-8"))  # send data to the client
-        conn.close()
-
+        # write to file every 100 new entries
+        if i % 100 == 0:
+            appendLinesToFile(lines)
+            lines.clear()
 
 if __name__ == '__main__':
+    # change current working directory to the folder which contains this file
+    os.chdir(os.path.dirname(os.path.abspath(__file__)))
     server_program()

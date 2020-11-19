@@ -7,11 +7,16 @@ import java.io.*;
 import java.net.Socket;
 
 public class MujRobot extends Robot {
-
+	private int hit = 0;
+	
 	public void run() {
 		while (true) {
 			turnLeft(360);
 		}
+	}
+	
+	public void onHitByBullet(HitByBulletEvent e) {
+		this.hit = 1;
 	}
 
 	public void onScannedRobot(ScannedRobotEvent e) {
@@ -21,8 +26,8 @@ public class MujRobot extends Robot {
 		double enemyY = getY() + Math.cos(angle) * e.getDistance();
 
 		String line = this.getX() + "," + this.getY() + "," + this.getHeading() + "," + this.getRadarHeading() + "," +
-            e.getDistance() + "," + this.getVelocity() + "," + enemyX + "," + enemyY + "," + e.getHeading() + "," +
-            e.getVelocity();
+            e.getDistance() + "," + this.getVelocity() + "," + this.getEnergy()  + "," + enemyX + "," + enemyY + "," + e.getHeading() + "," +
+            e.getVelocity() + "," + e.getEnergy() + "," + hit;
 
 		sendToPython(line);
 	}

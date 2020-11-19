@@ -25,7 +25,7 @@ def server_program():
 
     # add csv header
     if not path.exists("data.csv"):
-        lines.append("ourX,ourY,ourHeading,ourRadarHeading,distanceToTarget,ourVelocity,enemyX,enemyY,enemyHeading,enemyVelocity")
+        lines.append("ourX,ourY,ourHeading,ourRadarHeading,distanceToTarget,ourVelocity,ourEnergy,enemyX,enemyY,enemyHeading,enemyVelocity,enemyEnergy,hit")
 
     i = 0
     while True:

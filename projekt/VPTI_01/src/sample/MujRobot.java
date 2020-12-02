@@ -28,8 +28,10 @@ public class MujRobot extends Robot {
 		String line = this.getX() + "," + this.getY() + "," + this.getHeading() + "," + this.getRadarHeading() + "," +
             e.getDistance() + "," + this.getVelocity() + "," + this.getEnergy()  + "," + enemyX + "," + enemyY + "," + e.getHeading() + "," +
             e.getVelocity() + "," + e.getEnergy() + "," + hit;
+		
 
 		sendToPython(line);
+		this.hit = 0;
 	}
 
 	private void sendToPython(String line){

@@ -6,7 +6,7 @@ def appendLinesToFile(lines):
     with open("data.csv", 'a') as file:
         file.write(str.join('\n', lines) + "\n")
 
-def server_program():
+def listenForData():
     # get the hostname
     host = "localhost"
     port = 49000  # initiate port no above 1024
@@ -53,4 +53,4 @@ def server_program():
 if __name__ == '__main__':
     # change current working directory to the folder which contains this file
     os.chdir(os.path.dirname(os.path.abspath(__file__)))
-    server_program()
+    listenForData()

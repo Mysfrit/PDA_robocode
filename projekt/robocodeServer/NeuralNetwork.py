@@ -98,6 +98,8 @@ def encode_integer_categorical_feature(feature, name, dataset):
     return encoded_feature
 
 # Numerical features
+
+
 ourX = keras.Input(shape=(1,), name="ourX")
 ourY = keras.Input(shape=(1,), name="ourY")
 ourHeading = keras.Input(shape=(1,), name="ourHeading")

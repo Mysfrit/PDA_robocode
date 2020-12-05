@@ -78,7 +78,7 @@ def listenForPredicting():
         if not data:
             # if data is not received - continue
             continue
-        
+
         # decode data and exclude first two characters (some random bytes)
         decodedLine = data.decode("utf-8", errors="replace")[2:]
 
@@ -93,7 +93,7 @@ if __name__ == '__main__':
     os.chdir(os.path.dirname(os.path.abspath(__file__)))
 
     # listening mode
-    listenForData()
+    #listenForData()
 
     # predicting mode
     listenForPredicting()

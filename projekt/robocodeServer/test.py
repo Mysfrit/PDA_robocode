@@ -50,6 +50,8 @@ model.add(Dense(8, activation='relu', kernel_initializer='random_normal'))
 model.add(Dropout(0.3))
 model.add(Dense(1, activation='sigmoid', kernel_initializer='random_normal'))
 
+# Topology 3:
+
 # Compiling the neural network
 # binary_crossentropy is used for calculation the loss function between actual output vs predicted output
 model.compile(optimizer='adam', loss='binary_crossentropy', metrics=['accuracy'])
@@ -84,11 +86,12 @@ model.save(
 )
 
 model2 = load_model('savedModel.h5')
-inputArray = np.array([753.3447612984274,66.85285870551522,286.3598813541428,286.3598813541428,647.8662774018895,0.0,100.0,129.03344064761745,239.96001714162264,0.0,8.0,100.0])
-print(inputArray.shape)
 
-result = model2.predict(inputArray)
+inputArray = np.array(
+    [623.8133652426791,361.1313978468445,279.75827800996575,279.75827800996575,644.8199538815069,0.0,80.0,18.000000000000114,582.0000000000005,270.0,0.0,107.0]
+    ).reshape(1,12)
 
+result = model2.predict(inputArray)[0:1][0][0:1][0]
 
-print(result)
+print("Predicted result is: ", result)
 

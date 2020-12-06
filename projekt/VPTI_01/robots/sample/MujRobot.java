@@ -1,107 +1,127 @@
 package sample;
 
-import robocode.HitByBulletEvent;
-import robocode.Robot;
+import robocode.*;
 import robocode.ScannedRobotEvent;
-import robocode.StatusEvent;
 
+import java.awt.*;
+import java.awt.geom.Point2D;
 import java.io.*;
 import java.net.Socket;
-import java.nio.charset.StandardCharsets;
 
-public class MujRobot extends Robot {
-
-	/**
-	 * MyFirstRobot's run method - Seesaw
-	 */
+public class MujRobot extends AdvancedRobot {
+	private int hit = 0;
+	int hittable = 0;
 
 	public void run() {
-		System.out.println("ON RUN");
-
+		createCSV();
 		while (true) {
-			try {
-				Socket socket = new Socket("localhost", 50000);
-				System.out.println("Connected!");
-
-				// get the output stream from the socket.
-				OutputStream outputStream = socket.getOutputStream();
-				// create a data output stream from the output stream so we can send data through it
-				DataOutputStream dataOutputStream = new DataOutputStream(outputStream);
-
-				System.out.println("Sending string to the ServerSocket");
-
-				// write the message we want to send
-				dataOutputStream.writeUTF("FUCK OFF SCUM");
-				dataOutputStream.flush(); // send the message
-
-				// get the input stream from the connected socket
-				//InputStream inputStream = socket.getInputStream();
-				// create a DataInputStream so we can read data from it.
-
-				//DataInputStream dataInputStream = new DataInputStream(inputStream);
-
-				//DataInputStream dIn = new DataInputStream(socket.getInputStream());
-
-				////// read the message from the socket
-				//var a = dIn.readUTF();
-				// System.out.println(a);
-
-				BufferedReader inFromServer = new BufferedReader(new InputStreamReader(socket.getInputStream()));
-				var sentence = inFromServer.readLine();
-
-				socket.close();
-				Thread.sleep(2000);
-			} catch (IOException | InterruptedException ioException) {
-				ioException.printStackTrace();
-				System.out.println("I don't feel so good, Mr. Stark");
-			}
+			turnLeft(360);
 		}
 	}
 
-	/**
-	 * Fire when we see a robot
-	 */
+
+
 	public void onScannedRobot(ScannedRobotEvent e) {
-		fire(1);
+		double angle = Math.toRadians((getHeading() + e.getBearing()) % 360);
+
+		double enemyX = getX() + Math.sin(angle) * e.getDistance();
+		double enemyY = getY() + Math.cos(angle) * e.getDistance();
+
+
+
+		var enemyDegreeFromUs = absoluteBearing(getX(),getY(), enemyX,enemyY);
+
+		if((e.getHeading()+150) % 360 <= enemyDegreeFromUs && enemyDegreeFromUs <= (e.getHeading() + 210) % 360){
+			hittable = 1;
+			setBodyColor(Color.RED);
+		}
+		String data = this.getX() + "," + this.getY() + "," + this.getRadarHeading() + "," + e.getDistance() + "," + enemyX + "," + enemyY + ","
+				+ e.getHeading() + "," + e.getEnergy() + "," + hittable;
+
+
+
+		//sendToPython(line);
+		try {
+			writeToFile(data);
+		} catch (IOException ioException) {
+			ioException.printStackTrace();
+		}
+		hittable = 0;
 	}
 
-	/**
-	 * We were hit!  Turn perpendicular to the bullet,
-	 * so our seesaw might avoid a future shot.
-	 */
-	public void onHitByBullet(HitByBulletEvent e) {
-		turnLeft(90 - e.getBearing());
+	private void createCSV() {
+		File csv = new File("test.csv");
+		if(!csv.exists()) {
+			try (PrintWriter writer = new PrintWriter(new File("test.csv"))) {
+				StringBuilder sb = new StringBuilder();
+				sb.append("ourX,ourY,ourRadarHeading,distanceToTarget,enemyX,enemyY,enemyHeading,enemyEnergy,hittable\n");
+				writer.append(sb.toString());
+			} catch (FileNotFoundException e) {
+				System.out.println(e.getMessage());
+			}
+
+		}
 	}
 
-	@Override
-	public void onStatus(StatusEvent e) {
-		System.out.println("ON STATUS");
-		//String sentence;
-		//String responseFromIAServer;
-		//String dataToSendFromRobocode = "hi";
-		//System.out.println("Sending data: "+dataToSendFromRobocode);
-		//InputStream inStream = new ByteArrayInputStream(dataToSendFromRobocode.getBytes(StandardCharsets.UTF_8));
-		//BufferedReader inFromUser = new BufferedReader(new InputStreamReader(inStream));
-//
-		//try {
-		//	Socket clientSocket = new Socket("localhost", 50000);
-		//	OutputStream outputStream = clientSocket.getOutputStream();
-		//	// create a data output stream from the output stream so we can send data through it
-		//	DataOutputStream dataOutputStream = new DataOutputStream(outputStream);
-		//	System.out.println("Sending string to the ServerSocket");
-		//	// write the message we want to send
-		//	dataOutputStream.writeUTF("FUCK OFF SCUM");
-		//	dataOutputStream.flush(); // send the message
-//
-//
-		//	//BufferedReader inFromServer = new BufferedReader(new InputStreamReader(clientSocket.getInputStream()));
-		//	//sentence = inFromUser.readLine();
-		//	//responseFromIAServer = inFromServer.readLine();
-		//	//System.out.println("Action to do from server: " + responseFromIAServer);
-//
-		//	clientSocket.close();
-		//} catch (IOException ioException) {
-		//	ioException.printStackTrace();
-		//}
+	private void writeToFile(String data) throws IOException {
+
+		File csv = new File("test.csv");
+
+
+			if (csv.exists()) {
+
+				FileWriter fr = new FileWriter(csv, true);
+				BufferedWriter br = new BufferedWriter(fr);
+				PrintWriter pr = new PrintWriter(br);
+				pr.println(data);
+				pr.close();
+				br.close();
+				fr.close();
+			}
+
+		}
+
+		private double absoluteBearing(double x1, double y1, double x2, double y2) {
+		double xo = x2 - x1;
+		double yo = y2 - y1;
+
+		double hyp = Point2D.distance(x1, y1, x2, y2);
+
+		double arcSin = Math.toDegrees(Math.asin(xo / hyp));
+		double bearing = 0;
+
+		if (xo > 0 && yo > 0) { // both pos: lower-Left
+			bearing = arcSin;
+		} else if (xo < 0 && yo > 0) { // x neg, y pos: lower-right
+			bearing = 360 + arcSin; // arcsin is negative here, actuall 360 - ang
+		} else if (xo > 0 && yo < 0) { // x pos, y neg: upper-left
+			bearing = 180 - arcSin;
+		} else if (xo < 0 && yo < 0) { // both neg: upper-right
+			bearing = 180 - arcSin; // arcsin is negative here, actually 180 + ang
+		}
+
+		return bearing;
+	}
+
+	private void sendToPython(String line){
+		try {
+			Socket socket = new Socket("localhost", 49000);
+
+			// get the output stream from the socket.
+			OutputStream outputStream = socket.getOutputStream();
+
+			// create a data output stream from the output stream so we can send data through it
+			DataOutputStream dataOutputStream = new DataOutputStream(outputStream);
+
+			// write the message we want to send
+			dataOutputStream.writeUTF(line);
+
+			// send the message
+			dataOutputStream.flush();
+			socket.close();
+		} catch (IOException ioException) {
+			ioException.printStackTrace();
+			System.out.println("I don't feel so good, Mr. Stark");
+		}
 	}
 }

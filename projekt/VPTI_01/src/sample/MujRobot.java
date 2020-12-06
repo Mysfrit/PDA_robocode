@@ -3,21 +3,23 @@ package sample;
 import robocode.*;
 import robocode.ScannedRobotEvent;
 
+import java.awt.*;
+import java.awt.geom.Point2D;
 import java.io.*;
 import java.net.Socket;
 
-public class MujRobot extends Robot {
+public class MujRobot extends AdvancedRobot {
 	private int hit = 0;
-	
+	int hittable = 0;
+
 	public void run() {
+		createCSV();
 		while (true) {
 			turnLeft(360);
 		}
 	}
-	
-	public void onHitByBullet(HitByBulletEvent e) {
-		this.hit = 1;
-	}
+
+
 
 	public void onScannedRobot(ScannedRobotEvent e) {
 		double angle = Math.toRadians((getHeading() + e.getBearing()) % 360);
@@ -25,13 +27,80 @@ public class MujRobot extends Robot {
 		double enemyX = getX() + Math.sin(angle) * e.getDistance();
 		double enemyY = getY() + Math.cos(angle) * e.getDistance();
 
-		String line = this.getX() + "," + this.getY() + "," + this.getHeading() + "," + this.getRadarHeading() + "," +
-            e.getDistance() + "," + this.getVelocity() + "," + this.getEnergy()  + "," + enemyX + "," + enemyY + "," + e.getHeading() + "," +
-            e.getVelocity() + "," + e.getEnergy() + "," + hit;
-		
 
-		sendToPython(line);
-		this.hit = 0;
+
+		var enemyDegreeFromUs = absoluteBearing(getX(),getY(), enemyX,enemyY);
+
+		if((e.getHeading()+150) % 360 <= enemyDegreeFromUs && enemyDegreeFromUs <= (e.getHeading() + 210) % 360){
+			hittable = 1;
+			setBodyColor(Color.RED);
+		}
+		String data = this.getX() + "," + this.getY() + "," + this.getRadarHeading() + "," + e.getDistance() + "," + enemyX + "," + enemyY + ","
+				+ e.getHeading() + "," + e.getEnergy() + "," + hittable;
+
+
+
+		//sendToPython(line);
+		try {
+			writeToFile(data);
+		} catch (IOException ioException) {
+			ioException.printStackTrace();
+		}
+		hittable = 0;
+	}
+
+	private void createCSV() {
+		File csv = new File("test.csv");
+		if(!csv.exists()) {
+			try (PrintWriter writer = new PrintWriter(new File("test.csv"))) {
+				StringBuilder sb = new StringBuilder();
+				sb.append("ourX,ourY,ourRadarHeading,distanceToTarget,enemyX,enemyY,enemyHeading,enemyEnergy,hittable\n");
+				writer.append(sb.toString());
+			} catch (FileNotFoundException e) {
+				System.out.println(e.getMessage());
+			}
+
+		}
+	}
+
+	private void writeToFile(String data) throws IOException {
+
+		File csv = new File("test.csv");
+
+
+			if (csv.exists()) {
+
+				FileWriter fr = new FileWriter(csv, true);
+				BufferedWriter br = new BufferedWriter(fr);
+				PrintWriter pr = new PrintWriter(br);
+				pr.println(data);
+				pr.close();
+				br.close();
+				fr.close();
+			}
+
+		}
+
+		private double absoluteBearing(double x1, double y1, double x2, double y2) {
+		double xo = x2 - x1;
+		double yo = y2 - y1;
+
+		double hyp = Point2D.distance(x1, y1, x2, y2);
+
+		double arcSin = Math.toDegrees(Math.asin(xo / hyp));
+		double bearing = 0;
+
+		if (xo > 0 && yo > 0) { // both pos: lower-Left
+			bearing = arcSin;
+		} else if (xo < 0 && yo > 0) { // x neg, y pos: lower-right
+			bearing = 360 + arcSin; // arcsin is negative here, actuall 360 - ang
+		} else if (xo > 0 && yo < 0) { // x pos, y neg: upper-left
+			bearing = 180 - arcSin;
+		} else if (xo < 0 && yo < 0) { // both neg: upper-right
+			bearing = 180 - arcSin; // arcsin is negative here, actually 180 + ang
+		}
+
+		return bearing;
 	}
 
 	private void sendToPython(String line){
@@ -47,7 +116,7 @@ public class MujRobot extends Robot {
 			// write the message we want to send
 			dataOutputStream.writeUTF(line);
 
-            // send the message
+			// send the message
 			dataOutputStream.flush();
 			socket.close();
 		} catch (IOException ioException) {

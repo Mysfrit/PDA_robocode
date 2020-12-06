@@ -1,168 +1,87 @@
-import tensorflow as tf
+import os, io
 import numpy as np
 import pandas as pd
-from tensorflow import keras
-from tensorflow.keras import layers
+import seaborn as sns
+import matplotlib.pyplot as plt
 
-dataframe = pd.read_csv('data.csv')
-print(dataframe.shape)
-print(dataframe.head())
+# Set working directory to be a local directory (files will be taken from same directory as this script)
+os.chdir(os.path.dirname(os.path.abspath(__file__)))
 
-val_dataframe = dataframe.sample(frac=0.2, random_state=1337)
-train_dataframe = dataframe.drop(val_dataframe.index)
+dataset = pd.read_csv('robocode_data.csv')
+columns = dataset.shape[1] - 1
 
-print(
-    "Using %d samples for training and %d for validation"
-    % (len(train_dataframe), len(val_dataframe))
+print(dataset.head(5)) # Returns first n rows
+print(dataset.describe(include='all')) # Generate various summary statistics, excluding NaN values.
+
+# print(sns.pairplot(dataset, hue='hit'))
+
+# creating input features and target variables
+x = dataset.iloc[:,0:columns] # first argument: all rows; second argument: zero to twelve columns
+y = dataset.iloc[:,columns]
+
+# standardize different input scales
+from sklearn.preprocessing import StandardScaler
+sc = StandardScaler()
+x = sc.fit_transform(x)
+
+from sklearn.model_selection import train_test_split
+x_train, x_test, y_train, y_test = train_test_split(x, y, test_size=0.25)
+
+from keras import Sequential
+from keras.layers import *
+
+# Once the model is created, you can config the model with losses and metrics with model.compile(),
+# train the model with model.fit(), or use the model to do prediction with model.predict().
+model = Sequential() # Sequential is one of two main Keras models (the other one is Model)
+
+# Topology 1:
+# # First Hidden Layer
+# model.add(Dense(4, activation='relu', kernel_initializer='random_normal', input_dim=columns))
+# # Second  Hidden Layer
+# model.add(Dense(4, activation='relu', kernel_initializer='random_normal'))
+# # Output Layer - Sigmoid is commonly used in binary classification
+# model.add(Dense(1, activation='sigmoid', kernel_initializer='random_normal'))
+
+# Topology 2:
+model.add(Dense(8, activation='relu', kernel_initializer='random_normal', input_dim=columns))
+model.add(Dense(8, activation='relu', kernel_initializer='random_normal'))
+model.add(Dropout(0.3))
+model.add(Dense(8, activation='relu', kernel_initializer='random_normal'))
+model.add(Dropout(0.3))
+model.add(Dense(1, activation='sigmoid', kernel_initializer='random_normal'))
+
+# Topology 3:
+
+# Compiling the neural network
+# binary_crossentropy is used for calculation the loss function between actual output vs predicted output
+model.compile(optimizer='adam', loss='binary_crossentropy', metrics=['accuracy'])
+
+# Fit the model
+model.fit(x_train, y_train, batch_size=5, epochs=100)
+
+# Return the loss value & metrics values for the model in test mode
+eval_model=model.evaluate(x_train, y_train)
+print("---------- eval_model --------------")
+print(eval_model)
+
+# Predict output for our test dataset - make it a boolean based on its value
+y_pred=model.predict(x_test)
+y_pred=(y_pred>0.5)
+
+# Check the accuracy of NN
+from sklearn.metrics import confusion_matrix
+cm = confusion_matrix(y_test, y_pred)
+print("---------- confusion_matrix --------------")
+
+# left-upper and right-down are the values we want (true-positive and true-negative)
+# přidat i do prezentace
+print(cm)
+
+from keras.models import load_model
+
+model.save(
+    'savedModel.h5',
+    overwrite=True,
+    include_optimizer=True,
 )
 
-def dataframe_to_dataset(dataframe):
-    dataframe = dataframe.copy()
-    labels = dataframe.pop("hit")
-    ds = tf.data.Dataset.from_tensor_slices((dict(dataframe), labels))
-    ds = ds.shuffle(buffer_size=len(dataframe))
-    return ds
-
-train_ds = dataframe_to_dataset(train_dataframe)
-val_ds = dataframe_to_dataset(val_dataframe)
-
-for x, y in train_ds.take(1):
-    print("Input:", x)
-    print("Target:", y)
-
-train_ds = train_ds.batch(32)
-val_ds = val_ds.batch(32)
-
-from tensorflow.keras.layers.experimental.preprocessing import Normalization
-from tensorflow.keras.layers.experimental.preprocessing import CategoryEncoding
-from tensorflow.keras.layers.experimental.preprocessing import StringLookup
-
-
-def encode_numerical_feature(feature, name, dataset):
-    # Create a Normalization layer for our feature
-    normalizer = Normalization()
-
-    # Prepare a Dataset that only yields our feature
-    feature_ds = dataset.map(lambda x, y: x[name])
-    feature_ds = feature_ds.map(lambda x: tf.expand_dims(x, -1))
-
-    # Learn the statistics of the data
-    normalizer.adapt(feature_ds)
-
-    # Normalize the input feature
-    encoded_feature = normalizer(feature)
-    return encoded_feature
-
-
-def encode_string_categorical_feature(feature, name, dataset):
-    # Create a StringLookup layer which will turn strings into integer indices
-    index = StringLookup()
-
-    # Prepare a Dataset that only yields our feature
-    feature_ds = dataset.map(lambda x, y: x[name])
-    feature_ds = feature_ds.map(lambda x: tf.expand_dims(x, -1))
-
-    # Learn the set of possible string values and assign them a fixed integer index
-    index.adapt(feature_ds)
-
-    # Turn the string input into integer indices
-    encoded_feature = index(feature)
-
-    # Create a CategoryEncoding for our integer indices
-    encoder = CategoryEncoding(output_mode="binary")
-
-    # Prepare a dataset of indices
-    feature_ds = feature_ds.map(index)
-
-    # Learn the space of possible indices
-    encoder.adapt(feature_ds)
-
-    # Apply one-hot encoding to our indices
-    encoded_feature = encoder(encoded_feature)
-    return encoded_feature
-
-
-def encode_integer_categorical_feature(feature, name, dataset):
-    # Create a CategoryEncoding for our integer indices
-    encoder = CategoryEncoding(output_mode="binary")
-
-    # Prepare a Dataset that only yields our feature
-    feature_ds = dataset.map(lambda x, y: x[name])
-    feature_ds = feature_ds.map(lambda x: tf.expand_dims(x, -1))
-
-    # Learn the space of possible indices
-    encoder.adapt(feature_ds)
-
-    # Apply one-hot encoding to our indices
-    encoded_feature = encoder(feature)
-    return encoded_feature
-
-# Numerical features
-ourX = keras.Input(shape=(1,), name="ourX")
-ourY = keras.Input(shape=(1,), name="ourY")
-ourHeading = keras.Input(shape=(1,), name="ourHeading")
-ourRadarHeading = keras.Input(shape=(1,), name="ourRadarHeading")
-distanceToTarget = keras.Input(shape=(1,), name="distanceToTarget")
-ourVelocity = keras.Input(shape=(1,), name="ourVelocity")
-ourEnergy = keras.Input(shape=(1,), name="ourEnergy")
-enemyX = keras.Input(shape=(1,), name="enemyX")
-enemyY = keras.Input(shape=(1,), name="enemyY")
-enemyHeading = keras.Input(shape=(1,), name="enemyHeading")
-enemyVelocity = keras.Input(shape=(1,), name="enemyVelocity")
-enemyEnergy = keras.Input(shape=(1,), name="enemyEnergy")
-
-all_inputs = [
-    ourX,
-    ourY,
-    ourHeading,
-    ourRadarHeading,
-    distanceToTarget,
-    ourVelocity,
-    ourEnergy,
-    enemyX,
-    enemyY,
-    enemyHeading,
-    enemyVelocity,
-    enemyEnergy
-]
-
-# Numerical features
-ourX_encoded = encode_numerical_feature(ourX, "ourX", train_ds)
-ourY_encoded = encode_numerical_feature(ourY, "ourY", train_ds)
-ourHeading_encoded = encode_numerical_feature(ourHeading, "ourHeading", train_ds)
-ourRadarHeading_encoded = encode_numerical_feature(ourRadarHeading, "ourRadarHeading", train_ds)
-distanceToTarget_encoded = encode_numerical_feature(distanceToTarget, "distanceToTarget", train_ds)
-ourVelocity_encoded = encode_numerical_feature(ourVelocity, "ourVelocity", train_ds)
-ourEnergy_encoded = encode_numerical_feature(ourEnergy, "ourEnergy", train_ds)
-enemyX_encoded = encode_numerical_feature(enemyX, "enemyX", train_ds)
-enemyY_encoded = encode_numerical_feature(enemyY, "enemyY", train_ds)
-enemyHeading_encoded = encode_numerical_feature(enemyHeading, "enemyHeading", train_ds)
-enemyVelocity_encoded = encode_numerical_feature(enemyVelocity, "enemyVelocity", train_ds)
-enemyEnergy_encoded = encode_numerical_feature(enemyEnergy, "enemyEnergy", train_ds)
-
-all_features = layers.concatenate(
-    [
-        ourX_encoded,
-        ourY_encoded,
-        ourHeading_encoded,
-        ourRadarHeading_encoded,
-        distanceToTarget_encoded,
-        ourVelocity_encoded,
-        ourEnergy_encoded,
-        enemyX_encoded,
-        enemyY_encoded,
-        enemyHeading_encoded,
-        enemyVelocity_encoded,
-        enemyEnergy_encoded,
-    ]
-)
-
-x = layers.Dense(32, activation="relu")(all_features)
-x = layers.Dropout(0.5)(x)
-output = layers.Dense(1, activation="sigmoid")(x)
-model = keras.Model(all_inputs, output)
-model.compile("adam", "binary_crossentropy", metrics=["accuracy"])
-
-#keras.utils.plot_model(model, show_shapes=True, rankdir="LR")
-
-model.fit(train_ds, epochs=50, validation_data=val_ds)

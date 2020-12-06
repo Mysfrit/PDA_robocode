@@ -7,7 +7,7 @@ import matplotlib.pyplot as plt
 # Set working directory to be a local directory (files will be taken from same directory as this script)
 os.chdir(os.path.dirname(os.path.abspath(__file__)))
 
-dataset = pd.read_csv('data.csv')
+dataset = pd.read_csv('robocode_data.csv')
 columns = dataset.shape[1] - 1
 
 print(dataset.head(5)) # Returns first n rows
@@ -84,14 +84,4 @@ model.save(
     overwrite=True,
     include_optimizer=True,
 )
-
-model2 = load_model('savedModel.h5')
-
-inputArray = np.array(
-    [393.2807349231703,445.1148237304903,286.0050802594893,286.0050802594893,399.4661205744607,0.0,100.0,17.999999999999886,581.9999999999998,270.0,0.0,100.0]
-    ).reshape(1,columns)
-
-result = model2.predict(inputArray)[0:1][0][0:1][0]
-
-print("Predicted result is: ", result)
 

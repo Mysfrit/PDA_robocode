@@ -29,7 +29,7 @@ def listenForData():
 
     # add csv header
     if not path.exists("data.csv"):
-        lines.append("ourX,ourY,ourHeading,ourRadarHeading,distanceToTarget,ourVelocity,ourEnergy,enemyX,enemyY,enemyHeading,enemyVelocity,enemyEnergy,hit")
+        lines.append("ourX,ourY,ourRadarHeading,distanceToTarget,enemyX,enemyY,enemyHeading,enemyEnergy,hittable")
 
     i = 0
     while True:
@@ -40,7 +40,7 @@ def listenForData():
         # receive data stream. it won't accept data packet greater than 1024 bytes
         data = conn.recv(1024)
         if not data:
-            # if data is not received - continue
+            # if data is not received - continue listening
             continue
         
         # decode data and exclude first two characters (some random bytes)
@@ -62,7 +62,7 @@ def listenForPredicting():
     print("Starting Robocode NN Server in predicting mode...", host, port)
 
     server_socket = socket.socket()  # get instance
-    # look closely. The bind() function takes tuple as argument
+    # the bind() function takes tuple as argument
     server_socket.bind((host, port))  # bind host address and port together
 
     # configure how many client the server can listen simultaneously
@@ -76,14 +76,13 @@ def listenForPredicting():
         # receive data stream. it won't accept data packet greater than 1024 bytes
         data = conn.recv(1024).decode()
         if not data:
-            # if data is not received - continue
+            # if data is not received - continue listening
             continue
 
         # decode data and exclude first two characters (some random bytes)
         decodedLine = data.decode("utf-8", errors="replace")[2:]
 
-        # TODO: do something with decodedLine - ideally predict outcome using our NN 
-        outcome = ourModel.predict(decodedLine)
+        outcome = ourModel.predict(decodedLine)[0:1][0][0:1][0]
 
         conn.send(outcome.encode("UTF-8")) # send outcome to the client
         conn.close()

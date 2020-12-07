@@ -33,14 +33,14 @@ public class MujRobot extends AdvancedRobot {
 
 		if((e.getHeading()+150) % 360 <= enemyDegreeFromUs && enemyDegreeFromUs <= (e.getHeading() + 210) % 360){
 			hittable = 1;
-			setBodyColor(Color.RED);
 		}
 		String data = this.getX() + "," + this.getY() + "," + this.getRadarHeading() + "," + e.getDistance() + "," + enemyX + "," + enemyY + ","
 				+ e.getHeading() + "," + e.getEnergy() + "," + hittable;
 
 
 
-		//sendToPython(line);
+		sendToPython(data.substring(0, data.length() - 2));
+
 		try {
 			writeToFile(data);
 		} catch (IOException ioException) {
@@ -68,20 +68,20 @@ public class MujRobot extends AdvancedRobot {
 		File csv = new File("test.csv");
 
 
-			if (csv.exists()) {
+		if (csv.exists()) {
 
-				FileWriter fr = new FileWriter(csv, true);
-				BufferedWriter br = new BufferedWriter(fr);
-				PrintWriter pr = new PrintWriter(br);
-				pr.println(data);
-				pr.close();
-				br.close();
-				fr.close();
-			}
-
+			FileWriter fr = new FileWriter(csv, true);
+			BufferedWriter br = new BufferedWriter(fr);
+			PrintWriter pr = new PrintWriter(br);
+			pr.println(data);
+			pr.close();
+			br.close();
+			fr.close();
 		}
 
-		private double absoluteBearing(double x1, double y1, double x2, double y2) {
+	}
+
+	private double absoluteBearing(double x1, double y1, double x2, double y2) {
 		double xo = x2 - x1;
 		double yo = y2 - y1;
 
@@ -105,7 +105,7 @@ public class MujRobot extends AdvancedRobot {
 
 	private void sendToPython(String line){
 		try {
-			Socket socket = new Socket("localhost", 49000);
+			Socket socket = new Socket("localhost", 50000);
 
 			// get the output stream from the socket.
 			OutputStream outputStream = socket.getOutputStream();
@@ -118,10 +118,24 @@ public class MujRobot extends AdvancedRobot {
 
 			// send the message
 			dataOutputStream.flush();
+
+
+
+			BufferedReader inFromServer = new BufferedReader(new InputStreamReader(socket.getInputStream()));
+
+			var a  = inFromServer.readLine();
+			if(!a.isEmpty()){
+				changeColor(a);
+			}
+
 			socket.close();
 		} catch (IOException ioException) {
 			ioException.printStackTrace();
 			System.out.println("I don't feel so good, Mr. Stark");
 		}
+	}
+
+	private void changeColor(String c) {
+		this.setBodyColor(new Color(0,0,(int)(Double.parseDouble(c)*255)));
 	}
 }

@@ -1,5 +1,6 @@
 import socket
 import os
+import numpy as np
 from os import path
 
 def appendLinesToFile(lines):
@@ -74,17 +75,21 @@ def listenForPredicting():
         # accept new connection
         conn, address = server_socket.accept()
         # receive data stream. it won't accept data packet greater than 1024 bytes
-        data = conn.recv(1024).decode()
+        data = conn.recv(1024)
+
         if not data:
             # if data is not received - continue listening
             continue
 
         # decode data and exclude first two characters (some random bytes)
         decodedLine = data.decode("utf-8", errors="replace")[2:]
+        print(decodedLine)
+
+        decodedLine = np.array([float(x) for x in decodedLine.split(",")]).reshape(1, 8)
 
         outcome = ourModel.predict(decodedLine)[0:1][0][0:1][0]
-
-        conn.send(outcome.encode("UTF-8")) # send outcome to the client
+        print(outcome)
+        conn.send(str(outcome).encode("UTF-8"))  # send outcome to the client
         conn.close()
 
 if __name__ == '__main__':

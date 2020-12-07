@@ -16,11 +16,8 @@ def createModelWithTopology():
     model = Sequential() # Sequential is one of two main Keras models (the other one is Model)
 
     # Topology 1:
-    # # First Hidden Layer
     # model.add(Dense(4, activation='relu', kernel_initializer='random_normal', input_dim=columns))
-    # # Second  Hidden Layer
     # model.add(Dense(4, activation='relu', kernel_initializer='random_normal'))
-    # # Output Layer - Sigmoid is commonly used in binary classification
     # model.add(Dense(1, activation='sigmoid', kernel_initializer='random_normal'))
 
     # Topology 2:
@@ -54,7 +51,7 @@ y = dataset.iloc[:,columns]
 sc = StandardScaler()
 x = sc.fit_transform(x)
 
-# Split the data
+# Split the data + validation data
 x_train, x_test, y_train, y_test = train_test_split(x, y, test_size=0.25)
 
 # Once the model is created, you can config the model with losses and metrics with model.compile(),

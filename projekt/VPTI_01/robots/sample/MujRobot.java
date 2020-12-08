@@ -1,26 +1,100 @@
 package sample;
 
 import robocode.*;
-import robocode.ScannedRobotEvent;
 
 import java.awt.*;
 import java.awt.geom.Point2D;
 import java.io.*;
 import java.net.Socket;
+import java.util.Random;
 
 public class MujRobot extends AdvancedRobot {
-	private int hit = 0;
 	int hittable = 0;
+	String option = "random"; //for curve_line uncomment onHitWall & onHitRobot; otherwise comment it
+	
+	boolean direction = true;
 
 	public void run() {
 		createCSV();
-		while (true) {
-			turnLeft(360);
+		
+		setAdjustGunForRobotTurn(true);
+		setAdjustRadarForGunTurn(true);
+		switch (option) {
+		case "stay_still":
+			while (true) {
+				turnRadarRight(100);
+			}
+		case "straight_line":
+			while (true) {				
+				turnRadarRight(100);
+				if(direction) {
+					ahead(250);
+					direction = false;
+				}
+				else {
+					back(250);
+					direction = true;
+				}				
+			}
+		case "curve_line":						
+			while(true){
+				turnRadarRight(100);
+				setAhead(40000);
+				setTurnLeft(90);
+				waitFor(new TurnCompleteCondition(this));
+			}
+		case "random":
+			while(true) {
+				Random rand = new Random();
+				turnRadarRight(100);
+				if(rand.nextInt(101) > 30) {
+					setAhead(rand.nextInt(400));
+				}
+				else {
+					setBack(rand.nextInt(400));
+				}				
+				if(rand.nextInt(101) > 50) {
+					setTurnRight(rand.nextInt(180));
+					waitFor(new TurnCompleteCondition(this));
+				}
+				else {
+					setTurnLeft(rand.nextInt(180));
+					waitFor(new TurnCompleteCondition(this));
+				}				
+			}			
+		default:
+			System.out.println("Wrong option has been chosen!");
+			break;
 		}
 	}
 
 
+	/*public void onHitWall(HitWallEvent e) {
+		turnRight(0 - getHeading());
+		ahead(5000);
+		turnLeft(90);
+		ahead(5000);
+		
+		turnRight(180);
+		ahead(getBattleFieldWidth()/2);
+		turnRight(90);
+		ahead(getBattleFieldHeight()/4);
+		turnRight(90);
+	}
 
+	public void onHitRobot(HitRobotEvent e) {
+		turnRight(0 - getHeading());
+		ahead(5000);
+		turnLeft(90);
+		ahead(5000);
+		
+		turnRight(180);
+		ahead(getBattleFieldWidth()/2);
+		turnRight(90);
+		ahead(getBattleFieldHeight()/4);
+		turnRight(90);
+	}
+	*/
 	public void onScannedRobot(ScannedRobotEvent e) {
 		double angle = Math.toRadians((getHeading() + e.getBearing()) % 360);
 
@@ -34,6 +108,7 @@ public class MujRobot extends AdvancedRobot {
 		if((e.getHeading()+150) % 360 <= enemyDegreeFromUs && enemyDegreeFromUs <= (e.getHeading() + 210) % 360){
 			hittable = 1;
 		}
+		
 		String data = this.getX() + "," + this.getY() + "," + this.getRadarHeading() + "," + e.getDistance() + "," + enemyX + "," + enemyY + ","
 				+ e.getHeading() + "," + e.getEnergy() + "," + hittable;
 

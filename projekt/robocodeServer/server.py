@@ -9,7 +9,7 @@ def appendLinesToFile(lines):
 
 def loadLearnedModel():
     from keras.models import load_model
-    return load_model('savedModel.h5')
+    return load_model('T1_09567_SavedModel_noro.h5')
 
 def listenForData():
     # get the hostname
@@ -58,7 +58,7 @@ def listenForData():
 def listenForPredicting():
     # get the hostname
     host = "localhost"
-    port = 50000  # initiate port no above 1024
+    port = 49000  # initiate port no above 1024
 
     print("Starting Robocode NN Server in predicting mode...", host, port)
 

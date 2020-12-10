@@ -20,7 +20,7 @@ public class RobocodeRunner {
 	public static void main(String[] args) throws IOException {
 
 		String nazevTridyMehoRobota = "MujRobot";
-		String seznamProtivniku = "Crazy";
+		String seznamProtivniku = "Crazy, Crazy, Crazy, Crazy";
 
 		runRobocode(nazevTridyMehoRobota, seznamProtivniku);
 	}

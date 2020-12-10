@@ -38,7 +38,7 @@ def createModelWithTopology():
     # binary_crossentropy is used for calculation the loss function between actual output vs predicted output
 
     #edit this!
-    learning_rate = 0.001
+    learning_rate = 0.006
     custom_optimizer = keras.optimizers.Adam(learning_rate=learning_rate,name='Adam')
     model.compile(optimizer=custom_optimizer, loss='binary_crossentropy', metrics=['accuracy'])
 
@@ -60,8 +60,8 @@ x = dataset.iloc[:,0:columns] # first argument: all rows; second argument: zero 
 y = dataset.iloc[:,columns]
 
 # standardize different input scales
-sc = StandardScaler()
-x = sc.fit_transform(x)
+#sc = StandardScaler()
+#x = sc.fit_transform(x)
 
 # Split the data + validation data
 x_train, x_test, y_train, y_test = train_test_split(x, y, test_size=0.25)
@@ -76,8 +76,8 @@ model = createModelWithTopology()
 history = model.fit(
     x=x_train,
     y=y_train,
-    batch_size=1,
-    epochs=10,
+    batch_size=128,
+    epochs=100,
     verbose=1,
     validation_data=(x_test, y_test),
 )
@@ -107,7 +107,7 @@ plt.show()
 
 #save model do not forget to rename!
 model.save(
-    'savedModel.h5', #edit this!
+    'savedModel_test.h5', #edit this!
     overwrite=True,
     include_optimizer=True,
 )

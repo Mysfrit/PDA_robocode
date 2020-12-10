@@ -29,11 +29,10 @@ public class Crazy extends AdvancedRobot {
 	 */
 	public void run() {
 		// Set colors
-		setBodyColor(new Color(0, 200, 0));
-		setGunColor(new Color(0, 150, 50));
-		setRadarColor(new Color(0, 100, 100));
-		setBulletColor(new Color(255, 255, 100));
-		setScanColor(new Color(255, 200, 200));
+		this.setBodyColor(Color.black);
+		this.setGunColor(Color.black);
+		this.setRadarColor(Color.yellow);
+		
 
 		// Loop forever
 		while (true) {

@@ -9,7 +9,7 @@ def appendLinesToFile(lines):
 
 def loadLearnedModel():
     from keras.models import load_model
-    return load_model('T1_09567_SavedModel_noro.h5')
+    return load_model('savedModel_test.h5')
 
 def listenForData():
     # get the hostname

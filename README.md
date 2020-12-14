@@ -1,9 +1,9 @@
 
 # Setting enviroment
-1. Eclipse => Run configurations => Java Application => Tab: Arguments => Field: VM Arguments => add "-DNOSECURITY=true" 
+Eclipse => Run configurations => Java Application => Tab: Arguments => Field: VM Arguments => add "-DNOSECURITY=true" 
 
 
-2. IntelliJ => Edit Configuration => VM options => add "-DNOSECURITY=true" ; Main class "tanks.RobocodeRunner"
+IntelliJ => Edit Configuration => VM options => add "-DNOSECURITY=true" ; Main class "tanks.RobocodeRunner"
 
 Tested compatibility => JavaSE-9, JavaSE-14
 
